@@ -9,7 +9,7 @@ Identity management on top of `jardissupport/auth`: users, tenants, memberships,
 - **G2 tokens:** invitation and reset tokens come from auth (`TokenIssuer`/`TokenRedeemer`); only hashes are stored; the plain token is returned once, sending it is the consumer's job.
 - **G3 sessions:** `PasswordResetManager::reset()` and `UserManager::disable()` end ALL sessions (`invalidateAll`). `TenantSwitcher::switch($userId, $tenantId, ?$sessionRef)` creates a new session, then revokes the old access/refresh pair via `invalidateByReference`.
 - **Claims are ids:** tenant claim = tenant id (not slug), subject = `user:<id>`. `CredentialLookup` sets tenant + role claims only for exactly ONE membership; unknown or disabled users yield `null`.
-- **Transaction:** `InvitationManager::accept()` runs in one transaction (needs the `DbConnectionInterface`); `MembershipManager::remove()` is transactional (membership + group memberships) when the optional connection is passed; it registers an unknown e-mail (password required) or attaches the known user.
+- **Transaction:** `InvitationManager::accept()` runs in one transaction (needs the `DbConnectionInterface`); `MembershipManager::remove()` is transactional (membership + group memberships, needs the connection); it registers an unknown e-mail (password required) or attaches the known user.
 - **Errors:** all extend `IdentityException`; auth exceptions (`InvalidCredentialException`, `Token*Exception`) pass through. No enumeration: `PasswordResetManager::request()` returns `null` for unknown/disabled users.
 - **Tests:** integration over SQLite plus MariaDB (`make phpunit` starts it); flow example: `tests/Integration/IdentityFlowTest.php`.
 

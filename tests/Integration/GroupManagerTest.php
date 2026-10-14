@@ -56,7 +56,7 @@ final class GroupManagerTest extends TestCase
         $tenantManager = new TenantManager($tenants, $ids);
         $this->tenantId = $tenantManager->create('ACME', 'acme')->tenant->getId();
         $this->otherTenantId = $tenantManager->create('Beta', 'beta')->tenant->getId();
-        (new MembershipManager($memberships, $groupMembers, $users, $tenants))
+        (new MembershipManager($memberships, $groupMembers, $users, $tenants, $connection))
             ->add($this->userId, $this->tenantId, 'admin');
     }
 

@@ -23,7 +23,7 @@ use JardisSupport\Identity\Handler\Shared\RunInTransaction;
 /**
  * Orchestrates tenant memberships: add, change role, remove and list.
  *
- * remove() runs in one transaction when a connection is given; without one the writes are not bracketed.
+ * remove() always runs in one transaction (group memberships and membership).
  */
 final class MembershipManager
 {
@@ -38,16 +38,14 @@ final class MembershipManager
         GroupMemberStoreInterface $groupMembers,
         UserStoreInterface $users,
         TenantStoreInterface $tenants,
-        ?DbConnectionInterface $connection = null,
+        DbConnectionInterface $connection,
     ) {
         $this->addMembership = (new AddMembership($memberships, $users, $tenants))->__invoke(...);
         $this->changeRole = (new ChangeMembershipRole($memberships))->__invoke(...);
         $this->removeMembership = (new RemoveMembership(
             $memberships,
             $groupMembers,
-            $connection !== null
-                ? (new RunInTransaction($connection))->__invoke(...)
-                : static fn (Closure $work): mixed => $work(),
+            (new RunInTransaction($connection))->__invoke(...),
         ))->__invoke(...);
         $this->listForUser = (new ListUserMemberships($memberships))->__invoke(...);
         $this->listForTenant = (new ListTenantMemberships($memberships))->__invoke(...);

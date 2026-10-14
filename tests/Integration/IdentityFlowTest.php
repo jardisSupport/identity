@@ -66,7 +66,7 @@ final class IdentityFlowTest extends TestCase
 
         $userManager = new UserManager($users, $hasher, $ids, $sessions);
         $tenantManager = new TenantManager($tenants, $ids);
-        $membershipManager = new MembershipManager($memberships, $groupMembers, $users, $tenants);
+        $membershipManager = new MembershipManager($memberships, $groupMembers, $users, $tenants, $connection);
         $groupManager = new GroupManager($groups, $groupMembers, $memberships, $ids);
         $invitationManager = new InvitationManager($invitations, $users, $memberships, $hasher, $ids, $issuer, $redeemer, $connection);
         $resetManager = new PasswordResetManager($users, $hasher, $issuer, $redeemer, $sessions);

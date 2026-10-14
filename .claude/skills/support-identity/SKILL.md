@@ -57,11 +57,11 @@ new MembershipManager(
     GroupMemberStoreInterface $groupMembers,
     UserStoreInterface $users,
     TenantStoreInterface $tenants,
-    ?DbConnectionInterface $connection = null,   // given: remove() is ONE transaction
+    DbConnectionInterface $connection,   // remove() is ONE transaction
 )
 $m->add(string $userId, string $tenantId, string $role): MembershipResult        // events=[MembershipAdded]
 $m->changeRole(string $userId, string $tenantId, string $role): MembershipResult // events=[MembershipRoleChanged]
-$m->remove(string $userId, string $tenantId): MembershipRemoved                  // also removes the user from the tenant's groups (one transaction with $connection)
+$m->remove(string $userId, string $tenantId): MembershipRemoved                  // also removes the user from the tenant's groups (one transaction)
 /** @return list<MembershipInterface> */ $m->forUser(string $userId): array
 /** @return list<MembershipInterface> */ $m->forTenant(string $tenantId): array
 ```
