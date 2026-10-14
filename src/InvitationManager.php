@@ -8,6 +8,7 @@ use Closure;
 use JardisSupport\Auth\TokenIssuer;
 use JardisSupport\Auth\TokenRedeemer;
 use JardisSupport\Contract\Auth\PasswordHasherInterface;
+use JardisSupport\Contract\Auth\TokenStoreInterface;
 use JardisSupport\Contract\Data\IdentityInterface;
 use JardisSupport\Contract\DbConnection\DbConnectionInterface;
 use JardisSupport\Contract\Identity\InvitationInterface;
@@ -41,6 +42,7 @@ final class InvitationManager
         IdentityInterface $ids,
         TokenIssuer $issuer,
         TokenRedeemer $redeemer,
+        TokenStoreInterface $tokens,
         DbConnectionInterface $connection,
         int $ttl = 604800,
         int $minPasswordLength = 8,
@@ -61,6 +63,7 @@ final class InvitationManager
             $invitations,
             $ids,
             $issuer,
+            $tokens,
             $normalizeEmail,
             $assertEmail,
             $ttl,
