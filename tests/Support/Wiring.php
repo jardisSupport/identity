@@ -61,6 +61,7 @@ final class Wiring
             new DbGroupMemberStore($this->connection),
             $this->users,
             $this->tenants,
+            $this->connection,
         );
     }
 }

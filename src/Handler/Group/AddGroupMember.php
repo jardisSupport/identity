@@ -8,7 +8,9 @@ use Closure;
 use DateTimeImmutable;
 use JardisSupport\Contract\Identity\GroupMemberStoreInterface;
 use JardisSupport\Contract\Identity\MembershipStoreInterface;
+use JardisSupport\Contract\Repository\Exception\UniqueViolationException;
 use JardisSupport\Identity\Data\Event\GroupMemberAdded;
+use JardisSupport\Identity\Exception\GroupMemberExistsException;
 use JardisSupport\Identity\Exception\NotAMemberException;
 
 /** Adds a user to a group; only members of the group's tenant qualify. */
@@ -32,7 +34,11 @@ final class AddGroupMember
             throw new NotAMemberException('User is not a member of the group\'s tenant');
         }
 
-        $this->groupMembers->add($groupId, $userId);
+        try {
+            $this->groupMembers->add($groupId, $userId);
+        } catch (UniqueViolationException $e) {
+            throw new GroupMemberExistsException('User is already a member of the group', 0, $e);
+        }
 
         return new GroupMemberAdded($groupId, $userId, new DateTimeImmutable());
     }

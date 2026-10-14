@@ -57,10 +57,11 @@ new MembershipManager(
     GroupMemberStoreInterface $groupMembers,
     UserStoreInterface $users,
     TenantStoreInterface $tenants,
+    ?DbConnectionInterface $connection = null,   // given: remove() is ONE transaction
 )
 $m->add(string $userId, string $tenantId, string $role): MembershipResult        // events=[MembershipAdded]
 $m->changeRole(string $userId, string $tenantId, string $role): MembershipResult // events=[MembershipRoleChanged]
-$m->remove(string $userId, string $tenantId): MembershipRemoved                  // also removes the user from the tenant's groups
+$m->remove(string $userId, string $tenantId): MembershipRemoved                  // also removes the user from the tenant's groups (one transaction with $connection)
 /** @return list<MembershipInterface> */ $m->forUser(string $userId): array
 /** @return list<MembershipInterface> */ $m->forTenant(string $tenantId): array
 ```
@@ -74,7 +75,7 @@ new GroupManager(
     IdentityInterface $ids,
 )
 $m->create(string $tenantId, string $name): GroupResult              // events=[GroupCreated]; GroupNameTakenException
-$m->addMember(string $groupId, string $userId): GroupMemberAdded     // NotAMemberException unless member of the group's tenant
+$m->addMember(string $groupId, string $userId): GroupMemberAdded     // NotAMemberException unless member of the group's tenant; GroupMemberExistsException on duplicate
 $m->removeMember(string $groupId, string $userId): GroupMemberRemoved
 /** @return list<string> */ $m->members(string $groupId): array
 /** @return list<GroupInterface> */ $m->forTenant(string $tenantId): array
@@ -192,7 +193,7 @@ Plain readonly data objects — no interface, no dispatcher dependency. Caller d
 | `InvitationAccepted` | `invitationId`, `tenantId`, `userId` |
 
 ## EXCEPTIONS (`src/Exception/`)
-All extend `IdentityException` (extends `RuntimeException`): `InvalidEmailException`, `InvalidSlugException`, `WeakPasswordException`, `EmailAlreadyRegisteredException`, `SlugAlreadyTakenException`, `GroupNameTakenException`, `UserNotFoundException`, `TenantNotFoundException`, `GroupNotFoundException`, `UserDisabledException`, `MembershipExistsException`, `NotAMemberException`, `NotYourSessionException`, `InvitationInvalidException`, `PasswordRequiredException`.
+All extend `IdentityException` (extends `RuntimeException`): `InvalidEmailException`, `InvalidSlugException`, `WeakPasswordException`, `EmailAlreadyRegisteredException`, `SlugAlreadyTakenException`, `GroupNameTakenException`, `GroupMemberExistsException`, `UserNotFoundException`, `TenantNotFoundException`, `GroupNotFoundException`, `UserDisabledException`, `MembershipExistsException`, `NotAMemberException`, `NotYourSessionException`, `InvitationInvalidException`, `PasswordRequiredException`.
 Passed through from auth: `InvalidCredentialException`, `TokenExpiredException`, `TokenRevokedException` (extend `AuthenticationException`).
 
 ## DDL / TABLES

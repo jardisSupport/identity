@@ -6,6 +6,8 @@ namespace JardisSupport\Identity\Tests\Integration;
 
 use JardisSupport\Data\Identity;
 use JardisSupport\Contract\DbConnection\DbConnectionInterface;
+use JardisSupport\Contract\Identity\MembershipInterface;
+use JardisSupport\Contract\Identity\MembershipStoreInterface;
 use JardisSupport\Auth\DbTokenStore;
 use JardisSupport\Auth\PasswordHasher;
 use JardisSupport\Auth\SessionManager;
@@ -28,6 +30,7 @@ use JardisSupport\Identity\Tests\Support\Connections;
 use JardisSupport\Identity\Tests\Support\IdentityTables;
 use JardisSupport\Identity\UserManager;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class MembershipManagerTest extends TestCase
 {
@@ -47,7 +50,7 @@ final class MembershipManagerTest extends TestCase
         $memberships = new DbMembershipStore($this->connection);
         $groupMembers = new DbGroupMemberStore($this->connection);
 
-        $this->manager = new MembershipManager($memberships, $groupMembers, $users, $tenants);
+        $this->manager = new MembershipManager($memberships, $groupMembers, $users, $tenants, $this->connection);
         $this->groups = new GroupManager(new DbGroupStore($this->connection), $groupMembers, $memberships, $ids);
 
         $userManager = new UserManager(
@@ -130,5 +133,65 @@ final class MembershipManagerTest extends TestCase
     {
         $this->expectException(NotAMemberException::class);
         $this->manager->remove($this->userId, $this->tenantId);
+    }
+
+    public function testRemoveRollsBackGroupMembershipsWhenMembershipDeleteFails(): void
+    {
+        $memberships = new DbMembershipStore($this->connection);
+        $groupMembers = new DbGroupMemberStore($this->connection);
+        $failing = new class ($memberships) implements MembershipStoreInterface {
+            public function __construct(private readonly MembershipStoreInterface $inner)
+            {
+            }
+
+            public function store(MembershipInterface $membership): void
+            {
+                $this->inner->store($membership);
+            }
+
+            public function updateRole(string $userId, string $tenantId, string $role): void
+            {
+                $this->inner->updateRole($userId, $tenantId, $role);
+            }
+
+            public function remove(string $userId, string $tenantId): void
+            {
+                throw new RuntimeException('membership delete failed');
+            }
+
+            public function find(string $userId, string $tenantId): ?MembershipInterface
+            {
+                return $this->inner->find($userId, $tenantId);
+            }
+
+            public function listForUser(string $userId): array
+            {
+                return $this->inner->listForUser($userId);
+            }
+
+            public function listForTenant(string $tenantId): array
+            {
+                return $this->inner->listForTenant($tenantId);
+            }
+        };
+        $manager = new MembershipManager(
+            $failing,
+            $groupMembers,
+            new DbUserStore($this->connection),
+            new DbTenantStore($this->connection),
+            $this->connection,
+        );
+        $this->manager->add($this->userId, $this->tenantId, 'admin');
+        $group = $this->groups->create($this->tenantId, 'backend')->group;
+        $this->groups->addMember($group->getId(), $this->userId);
+
+        try {
+            $manager->remove($this->userId, $this->tenantId);
+            self::fail('the failing store must abort remove()');
+        } catch (RuntimeException) {
+        }
+
+        self::assertSame([$this->userId], $this->groups->members($group->getId()));
+        self::assertCount(1, $this->manager->forUser($this->userId));
     }
 }

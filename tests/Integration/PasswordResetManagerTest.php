@@ -101,4 +101,19 @@ final class PasswordResetManagerTest extends TestCase
         $this->expectException(WeakPasswordException::class);
         $this->manager->reset($request->token, 'short');
     }
+
+    public function testWeakNewPasswordDoesNotConsumeTheToken(): void
+    {
+        $request = $this->manager->request('max@acme.test');
+        self::assertNotNull($request);
+
+        try {
+            $this->manager->reset($request->token, 'short');
+            self::fail('a weak password must be rejected');
+        } catch (WeakPasswordException) {
+        }
+
+        $this->manager->reset($request->token, 'secret-2');
+        self::assertTrue($this->w->hasher->verify('secret-2', (string) $this->w->users->passwordHashOf($this->userId)));
+    }
 }

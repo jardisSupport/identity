@@ -85,7 +85,7 @@ $invitations  = new DbInvitationStore($connection);
 // identity orchestrators
 $userManager       = new UserManager($users, $hasher, $ids, $sessions);
 $tenantManager     = new TenantManager($tenants, $ids);
-$membershipManager = new MembershipManager($memberships, $groupMembers, $users, $tenants);
+$membershipManager = new MembershipManager($memberships, $groupMembers, $users, $tenants, $connection);
 $groupManager      = new GroupManager($groups, $groupMembers, $memberships, $ids);
 $invitationManager = new InvitationManager($invitations, $users, $memberships, $hasher, $ids, $issuer, $redeemer, $connection);
 $resetManager      = new PasswordResetManager($users, $hasher, $issuer, $redeemer, $sessions);
@@ -269,6 +269,7 @@ All identity errors extend `IdentityException` (`RuntimeException`).
 | `EmailAlreadyRegisteredException` | Normalized e-mail is already registered |
 | `SlugAlreadyTakenException` | Tenant slug already in use |
 | `GroupNameTakenException` | Tenant already has a group with this name |
+| `GroupMemberExistsException` | User is already a member of the group |
 | `UserNotFoundException` | User id does not resolve |
 | `TenantNotFoundException` | Tenant id does not resolve |
 | `GroupNotFoundException` | Group id does not resolve |

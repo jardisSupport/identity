@@ -16,6 +16,7 @@ use JardisSupport\Identity\DbGroupStore;
 use JardisSupport\Identity\DbMembershipStore;
 use JardisSupport\Identity\DbTenantStore;
 use JardisSupport\Identity\DbUserStore;
+use JardisSupport\Identity\Exception\GroupMemberExistsException;
 use JardisSupport\Identity\Exception\GroupNameTakenException;
 use JardisSupport\Identity\Exception\GroupNotFoundException;
 use JardisSupport\Identity\Exception\NotAMemberException;
@@ -120,5 +121,14 @@ final class GroupManagerTest extends TestCase
         self::assertInstanceOf(GroupMemberRemoved::class, $removed);
         self::assertSame([$group->getId(), $this->userId], [$removed->groupId, $removed->userId]);
         self::assertSame([], $this->manager->members($group->getId()));
+    }
+
+    public function testAddingTheSameMemberTwiceIsTranslated(): void
+    {
+        $group = $this->manager->create($this->tenantId, 'backend')->group;
+        $this->manager->addMember($group->getId(), $this->userId);
+
+        $this->expectException(GroupMemberExistsException::class);
+        $this->manager->addMember($group->getId(), $this->userId);
     }
 }

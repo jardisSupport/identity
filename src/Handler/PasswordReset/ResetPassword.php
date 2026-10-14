@@ -37,6 +37,9 @@ final class ResetPassword
 
     public function __invoke(string $token, string $newPassword): PasswordReset
     {
+        // Check first: a too weak password must not burn the single-use reset token.
+        ($this->assertPassword)($newPassword);
+
         $redeemed = $this->redeemer->redeem($token, TokenType::PasswordReset);
         $subject = Subject::parse((string) $redeemed->getSubject());
 
@@ -46,7 +49,6 @@ final class ResetPassword
             throw new UserDisabledException(sprintf('User "%s" is disabled', $subject->id));
         }
 
-        ($this->assertPassword)($newPassword);
         $this->users->updatePasswordHash($subject->id, $this->hasher->hash($newPassword));
         ($this->invalidateAll)($subject->toString());
 

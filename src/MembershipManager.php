@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace JardisSupport\Identity;
 
 use Closure;
+use JardisSupport\Contract\DbConnection\DbConnectionInterface;
 use JardisSupport\Contract\Identity\GroupMemberStoreInterface;
 use JardisSupport\Contract\Identity\MembershipInterface;
 use JardisSupport\Contract\Identity\MembershipStoreInterface;
@@ -17,8 +18,13 @@ use JardisSupport\Identity\Handler\Membership\ChangeMembershipRole;
 use JardisSupport\Identity\Handler\Membership\ListTenantMemberships;
 use JardisSupport\Identity\Handler\Membership\ListUserMemberships;
 use JardisSupport\Identity\Handler\Membership\RemoveMembership;
+use JardisSupport\Identity\Handler\Shared\RunInTransaction;
 
-/** Orchestrates tenant memberships: add, change role, remove and list. */
+/**
+ * Orchestrates tenant memberships: add, change role, remove and list.
+ *
+ * remove() runs in one transaction when a connection is given; without one the writes are not bracketed.
+ */
 final class MembershipManager
 {
     private readonly Closure $addMembership;
@@ -32,10 +38,17 @@ final class MembershipManager
         GroupMemberStoreInterface $groupMembers,
         UserStoreInterface $users,
         TenantStoreInterface $tenants,
+        ?DbConnectionInterface $connection = null,
     ) {
         $this->addMembership = (new AddMembership($memberships, $users, $tenants))->__invoke(...);
         $this->changeRole = (new ChangeMembershipRole($memberships))->__invoke(...);
-        $this->removeMembership = (new RemoveMembership($memberships, $groupMembers))->__invoke(...);
+        $this->removeMembership = (new RemoveMembership(
+            $memberships,
+            $groupMembers,
+            $connection !== null
+                ? (new RunInTransaction($connection))->__invoke(...)
+                : static fn (Closure $work): mixed => $work(),
+        ))->__invoke(...);
         $this->listForUser = (new ListUserMemberships($memberships))->__invoke(...);
         $this->listForTenant = (new ListTenantMemberships($memberships))->__invoke(...);
     }
