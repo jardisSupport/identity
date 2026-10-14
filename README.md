@@ -87,7 +87,7 @@ $userManager       = new UserManager($users, $hasher, $ids, $sessions);
 $tenantManager     = new TenantManager($tenants, $ids);
 $membershipManager = new MembershipManager($memberships, $groupMembers, $users, $tenants, $connection);
 $groupManager      = new GroupManager($groups, $groupMembers, $memberships, $ids);
-$invitationManager = new InvitationManager($invitations, $users, $memberships, $hasher, $ids, $issuer, $redeemer, $connection);
+$invitationManager = new InvitationManager($invitations, $users, $memberships, $hasher, $ids, $issuer, $redeemer, $tokens, $connection);
 $resetManager      = new PasswordResetManager($users, $hasher, $issuer, $redeemer, $sessions);
 $switcher          = new TenantSwitcher($users, $memberships, $tokens, $sessions);
 
@@ -151,7 +151,7 @@ $invite->invitation;   // Invitation
 $invite->events;       // [InvitationCreated]
 
 // Sending the token (e-mail, link, chat) is the consumer's job.
-// An open invitation for the same tenant + e-mail is revoked when a new one is issued.
+// An open invitation for the same tenant + e-mail is revoked when a new one is issued: the row and its auth token (the old plain token no longer redeems).
 
 $accepted = $invitationManager->accept($invite->token, password: 'secret-2', displayName: 'Dev');
 $accepted->user;         // new account, or the existing one

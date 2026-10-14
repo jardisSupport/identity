@@ -91,11 +91,12 @@ new InvitationManager(
     IdentityInterface $ids,
     TokenIssuer $issuer,
     TokenRedeemer $redeemer,
+    TokenStoreInterface $tokens,   // revokes the token of a replaced invitation
     DbConnectionInterface $connection,
     int $ttl = 604800,
     int $minPasswordLength = 8,
 )
-$m->invite(string $tenantId, string $email, string $role): InvitationResult   // {invitation, token (plain, once), events=[InvitationCreated]}; an open invitation for tenant+e-mail is revoked
+$m->invite(string $tenantId, string $email, string $role): InvitationResult   // {invitation, token (plain, once), events=[InvitationCreated]}; an open invitation for tenant+e-mail is revoked (row and auth token)
 $m->accept(string $token, ?string $password = null, ?string $displayName = null): AcceptResult
     // {user, membership, events=[UserRegistered?, MembershipAdded, InvitationAccepted]}
     // one transaction: redeem token → claim invitation (CAS) → register unknown user (password required) or attach known one → membership

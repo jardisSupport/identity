@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace JardisSupport\Identity\Tests\Integration;
 
+use JardisSupport\Auth\Exception\TokenRevokedException;
 use JardisSupport\Identity\Data\Event\InvitationAccepted;
 use JardisSupport\Identity\Data\Event\InvitationCreated;
 use JardisSupport\Identity\Data\Event\MembershipAdded;
@@ -34,6 +35,7 @@ final class InvitationManagerTest extends TestCase
             $this->w->ids,
             $this->w->issuer,
             $this->w->redeemer,
+            $this->w->tokens,
             $this->w->connection,
         );
         $this->tenantId = $this->w->tenantManager->create('ACME', 'acme')->tenant->getId();
@@ -99,6 +101,24 @@ final class InvitationManagerTest extends TestCase
         }
 
         self::assertSame('viewer', $this->manager->accept($second->token, 'secret-pw')->membership->getRole());
+    }
+
+    public function testMatrix04bReplacedInvitationTokenIsRevokedInTheTokenStore(): void
+    {
+        $first = $this->manager->invite($this->tenantId, 'a@acme.test', 'editor');
+        $firstHash = $first->invitation->getTokenHash();
+        self::assertFalse($this->w->tokens->find($firstHash)?->isRevoked());
+
+        $second = $this->manager->invite($this->tenantId, 'a@acme.test', 'viewer');
+
+        self::assertTrue($this->w->tokens->find($firstHash)?->isRevoked());
+        self::assertFalse($this->w->tokens->find($second->invitation->getTokenHash())?->isRevoked());
+        try {
+            $this->manager->accept($first->token, 'secret-pw');
+            self::fail('replaced invitation token must not redeem');
+        } catch (InvitationInvalidException $e) {
+            self::assertInstanceOf(TokenRevokedException::class, $e->getPrevious());
+        }
     }
 
     public function testMatrix05PasswordIsRequiredForNewEmail(): void
