@@ -9,6 +9,7 @@ use DateInterval;
 use DateTimeImmutable;
 use JardisSupport\Auth\Data\Subject;
 use JardisSupport\Auth\TokenIssuer;
+use JardisSupport\Contract\Auth\TokenStoreInterface;
 use JardisSupport\Contract\Auth\TokenType;
 use JardisSupport\Contract\Data\IdentityInterface;
 use JardisSupport\Contract\Identity\InvitationStoreInterface;
@@ -19,9 +20,8 @@ use JardisSupport\Identity\Data\InvitationResult;
 /**
  * Invites an e-mail address into a tenant and issues the one-time token.
  *
- * An open invitation for the same (tenant, e-mail) pair is revoked via markRevoked. Its auth token
- * is deliberately not revoked in the token store (this handler holds no token store): it simply
- * expires there, and redeeming it fails at the invitation (revoked_at), see AcceptInvitation.
+ * An open invitation for the same (tenant, e-mail) pair is revoked via markRevoked, and its auth
+ * token is revoked in the token store, so redeeming the old plain token fails at the token already.
  */
 final class CreateInvitation
 {
@@ -34,6 +34,7 @@ final class CreateInvitation
         private readonly InvitationStoreInterface $invitations,
         private readonly IdentityInterface $ids,
         private readonly TokenIssuer $issuer,
+        private readonly TokenStoreInterface $tokens,
         private readonly Closure $normalizeEmail,
         private readonly Closure $assertEmail,
         private readonly int $ttl,
@@ -48,6 +49,7 @@ final class CreateInvitation
         $open = $this->invitations->findPending($tenantId, $normalized);
         if ($open !== null) {
             $this->invitations->markRevoked($open->getId(), $now);
+            $this->tokens->revoke($open->getTokenHash());
         }
 
         $id = $this->ids->generateUuid7();
