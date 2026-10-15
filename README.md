@@ -1,5 +1,11 @@
 # Jardis Identity
 
+> **⚠️ ABANDONED (2026-10-15).** This package is superseded and no longer maintained. Identity management
+> (users, tenants, memberships, invitations, login/refresh/logout, password reset, tenant switch) is a
+> *generic subdomain*, not a package capability: Jardis ships it as the importable Builder blueprint
+> **"Access"**, which generates a regular Bounded Context on top of `jardissupport/auth` (>= 1.5.0).
+> This repository stays archived as the reference the blueprint was derived from. Do not depend on it.
+
 ![Build Status](https://github.com/jardisSupport/identity/actions/workflows/ci.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.3-777BB4.svg)](https://www.php.net/)
